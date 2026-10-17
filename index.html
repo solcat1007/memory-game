@@ -2,54 +2,338 @@
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>记忆翻牌 | Memory Game</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>记忆翻牌 · 配对挑战</title>
+<meta name="description" content="翻开卡片找出相同图案，考验记忆力，支持多档难度">
+<link rel="manifest" href="./manifest.webmanifest">
+<link rel="icon" href="./icon.svg">
+<meta name="theme-color" content="#7e57c2">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="记忆翻牌">
 <style>
-:root{--c:#00BCD4;--cd:#0097A7;--w:#fff;--bg:#f0f8f9;--t:#333}
+
+:root{
+  --bg:#f4f5f7;           /* 页面底色：浅灰，避免纯白刺眼 */
+  --bg-glow:#ffffff;      /* 顶部径向光晕色，制造轻微的空间感 */
+  --surface:#ffffff;      /* 卡片底色 */
+  --surface-2:#fafbfc;    /* 卡片内的次级区块（输入框、结果区） */
+  --text:#16181d;         /* 主文字 */
+  --soft:#5d636e;         /* 次要文字 */
+  --mute:#8b929e;         /* 弱化文字（提示、单位、占位符） */
+  --line:#e6e8ec;         /* 分割线与边框 */
+  --accent:#26a69a;       /* 强调色（各玩具不同） */
+  --accent-soft:#e6f4f2;  /* 强调色的浅色版，用于底色块 */
+  --r-lg:20px; --r-md:14px; --r-sm:10px;
+  --ease:cubic-bezier(.4,0,.2,1);
+  --shadow:0 1px 2px rgba(16,24,40,.04), 0 8px 24px rgba(16,24,40,.06);
+}
 *{margin:0;padding:0;box-sizing:border-box}
-body{font-family:'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif;background:var(--bg);color:var(--t);display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;overflow:hidden;user-select:none}
-.lang-btn{position:fixed;top:20px;left:20px;z-index:100;padding:8px 16px;background:var(--c);color:var(--w);border:none;border-radius:20px;cursor:pointer;font-size:14px;font-weight:600;transition:.2s}
-.lang-btn:hover{background:var(--cd)}
-.fs-btn{position:fixed;top:20px;right:20px;z-index:100;padding:8px 16px;background:var(--c);color:var(--w);border:none;border-radius:20px;cursor:pointer;font-size:14px;font-weight:600;transition:.2s}
-.fs-btn:hover{background:var(--cd)}
-h2{color:var(--c);margin-bottom:10px;font-weight:600}
-.stats{font-size:16px;font-weight:600;color:var(--c);margin-bottom:15px;display:flex;gap:24px}
-.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;max-width:400px;width:90vw}
-.card{aspect-ratio:1;border-radius:10px;cursor:pointer;transition:transform .3s,background .2s;display:flex;align-items:center;justify-content:center;font-size:32px;background:var(--c);color:var(--w);box-shadow:0 4px 12px rgba(0,188,212,0.2)}
-.card.flipped{background:var(--w);color:var(--c);border:2px solid var(--c);transform:scale(1.05)}
-.card.matched{background:#e0f7fa;color:var(--cd);border:2px solid var(--cd);cursor:default;transform:scale(0.95)}
-.btn-new{padding:10px 24px;background:var(--c);color:var(--w);border:none;border-radius:20px;cursor:pointer;font-size:15px;font-weight:600;margin-top:15px;transition:.2s;font-family:inherit}
-.btn-new:hover{background:var(--cd)}
-.win-msg{color:var(--c);font-size:22px;font-weight:700;margin-top:10px}
-@media(max-width:450px){.grid{gap:6px;max-width:320px}.card{font-size:24px}}
+
+body{
+  font-family:system-ui,-apple-system,'PingFang SC','Microsoft YaHei',sans-serif;
+  background:var(--bg);
+  /* 顶部一层极淡光晕，比死板的纯色更有层次 */
+  background-image:radial-gradient(120% 80% at 50% 0%, var(--bg-glow) 0%, rgba(255,255,255,0) 62%);
+  background-attachment:fixed;
+  color:var(--text);
+  min-height:100dvh;
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  padding:24px; -webkit-font-smoothing:antialiased;
+}
+
+.app{width:100%; max-width:480px; display:flex; flex-direction:column; align-items:center; gap:20px}
+
+.head{text-align:center}
+.head h1{font-size:22px; font-weight:600; letter-spacing:.5px}
+.head p{font-size:13px; color:var(--mute); margin-top:6px}
+
+.card{
+  width:100%; background:var(--surface); border:1px solid var(--line);
+  border-radius:var(--r-lg); padding:22px; box-shadow:var(--shadow);
+}
+
+.stage{
+  width:288px; height:288px; position:relative;
+  background:var(--surface); border:1px solid var(--line);
+  border-radius:50%; box-shadow:var(--shadow);
+  display:flex; align-items:center; justify-content:center;
+}
+.stage canvas{border-radius:50%}
+
+.phase{
+  font-size:29px; font-weight:300; letter-spacing:6px;
+  color:var(--accent); min-height:42px; text-align:center;
+  transition:color .4s var(--ease);
+}
+.cd{font-size:15px; color:var(--soft); font-variant-numeric:tabular-nums; min-height:22px}
+.meta{font-size:13px; color:var(--mute); min-height:20px; text-align:center}
+
+.row{display:flex; gap:10px; flex-wrap:wrap; justify-content:center}
+.stats{display:flex; gap:10px; width:100%}
+.stat{
+  flex:1; background:var(--surface-2); border:1px solid var(--line);
+  border-radius:var(--r-md); padding:12px; text-align:center;
+}
+.stat .k{font-size:11px; color:var(--mute); letter-spacing:1px}
+.stat .v{font-size:21px; font-weight:600; margin-top:3px; font-variant-numeric:tabular-nums}
+
+.chip{
+  padding:9px 18px; font-size:13px; font-weight:500; font-family:inherit;
+  background:var(--surface); color:var(--soft);
+  border:1px solid var(--line); border-radius:999px; cursor:pointer;
+  transition:all .2s var(--ease);
+}
+.chip:hover{border-color:var(--accent); color:var(--accent)}
+.chip.active{
+  background:var(--accent); border-color:var(--accent); color:#fff;
+  box-shadow:0 4px 14px rgba(0,0,0,.14);
+}
+
+.btn{
+  padding:13px 42px; font-size:15px; font-weight:600; font-family:inherit;
+  letter-spacing:3px; background:var(--accent); color:#fff;
+  border:none; border-radius:var(--r-md); cursor:pointer;
+  transition:transform .15s var(--ease), box-shadow .2s var(--ease);
+  box-shadow:0 6px 20px rgba(0,0,0,.16);
+}
+.btn:hover{transform:translateY(-1px)}
+.btn:active{transform:translateY(0)}
+.btn.ghost{background:transparent; border:1px solid var(--line); color:var(--soft); box-shadow:none}
+
+.lang{
+  position:fixed; top:16px; right:16px; z-index:20;
+  padding:7px 14px; font-size:12px; font-weight:600; font-family:inherit;
+  background:var(--surface); color:var(--soft);
+  border:1px solid var(--line); border-radius:999px; cursor:pointer;
+  transition:all .2s var(--ease);
+}
+.lang:hover{border-color:var(--accent); color:var(--accent)}
+
+.hint{font-size:12px; color:var(--mute); text-align:center; line-height:1.7}
+
+@media (max-width:380px){
+  .stage{width:250px;height:250px}
+  .phase{font-size:25px; letter-spacing:4px}
+}
+
+:root{ --accent:#7e57c2; --accent-soft:#efe9f9; }
+
+.board{width:100%;display:grid;gap:10px}
+.card{cursor:pointer;aspect-ratio:3/4;position:relative;transform-style:preserve-3d;
+  transition:transform .38s var(--ease)}
+.card.flipped{transform:rotateY(180deg)}
+.face{position:absolute;inset:0;backface-visibility:hidden;border-radius:var(--r-md);
+  display:flex;align-items:center;justify-content:center;font-size:28px;
+  border:1px solid var(--line)}
+.face.back{background:var(--accent);color:#fff;font-weight:600}
+.face.front{background:var(--surface);transform:rotateY(180deg)}
+.card.matched .face.front{background:var(--accent-soft);border-color:var(--accent)}
+
 </style>
 </head>
 <body>
-<button class="lang-btn" onclick="toggleLang()">中/EN</button>
-<button class="fs-btn" onclick="toggleFS()">全屏</button>
-<h2 data-key="title">记忆翻牌</h2>
-<div class="stats">
-  <span id="moves" data-key="moves">步数: 0</span>
-  <span id="pairsFound" data-key="pairs">配对: 0/8</span>
+<button class="lang" id="langBtn" onclick="toggleLang()">EN</button>
+<div class="app">
+
+  <div class="head">
+    <h1 id="t_title">记忆翻牌</h1>
+    <p id="t_sub">找出所有相同的图案</p>
+  </div>
+
+  <div class="card">
+    <div class="stats">
+      <div class="stat"><div class="k" id="t_moves">步数</div><div class="v" id="vMoves">0</div></div>
+      <div class="stat"><div class="k" id="t_time">用时</div><div class="v" id="vTime">0s</div></div>
+      <div class="stat"><div class="k" id="t_pairs">配对</div><div class="v" id="vPairs">0/8</div></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="row" style="margin-bottom:16px" id="levels"></div>
+    <div class="board" id="board"></div>
+  </div>
+
+  <div class="row">
+    <button class="btn" onclick="newGame()">重新开始</button>
+  </div>
+
+  <div class="hint" id="t_hint">翻开两张卡片，相同则配对成功</div>
+
 </div>
-<div class="grid" id="grid"></div>
-<div class="win-msg" id="winMsg"></div>
-<button class="btn-new" onclick="newGame()" data-key="new">新游戏</button>
 <script>
-/* ===== 记忆翻牌 / Memory Game ===== */
-var i18n={zh:{title:"记忆翻牌",moves:"步数: {n}",pairs:"配对: {n}/8",new:"新游戏",win:"恭喜！全部配对成功！"},en:{title:"Memory Game",moves:"Moves: {n}",pairs:"Pairs: {n}/8",new:"New Game",win:"Congratulations! All matched!"}};
-var lang="zh";
-function t(key,replace){var s=i18n[lang][key];if(replace)for(var k in replace)s=s.replace("{"+k+"}",replace[k]);return s}
-function updateUI(){document.querySelectorAll("[data-key]").forEach(function(el){var k=el.getAttribute("data-key");if(k==="moves")el.textContent=t(k,{n:moves});else if(k==="pairs")el.textContent=t(k,{n:matched});else el.textContent=t(k)})}
-function toggleLang(){lang=lang==="zh"?"en":"zh";updateUI()}
-function toggleFS(){document.fullscreenElement?document.exitFullscreen():document.documentElement.requestFullscreen()}
-var icons=["🐱","🐶","🐰","🐼","🦊","🐸","🐵","🐤"],cards=[],flipped=[],matched=0,moves=0,lock=false;
-function shuffle(a){for(var i=a.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=a[i];a[i]=a[j];a[j]=t}return a}
-function newGame(){cards=shuffle(icons.concat(icons));flipped=[];matched=0;moves=0;lock=false;document.getElementById("winMsg").textContent="";render();updateUI()}
-function render(){var g=document.getElementById("grid");g.innerHTML="";cards.forEach(function(icon,i){var d=document.createElement("div");d.className="card";d.setAttribute("data-idx",i);if(flipped.includes(i)){d.classList.add("flipped");d.textContent=icon}if(matchedCards.has(i)){d.classList.add("matched");d.textContent=icon}d.onclick=function(){flip(i)};g.appendChild(d)})}
-var matchedCards=new Set();
-function flip(i){if(lock||flipped.includes(i)||matchedCards.has(i))return;flipped.push(i);render();if(flipped.length===2){moves++;updateUI();if(cards[flipped[0]]===cards[flipped[1]]){matched++;matchedCards.add(flipped[0]);matchedCards.add(flipped[1]);flipped=[];render();updateUI();if(matched===8){document.getElementById("winMsg").textContent=t("win")}}else{lock=true;setTimeout(function(){flipped=[];render();lock=false},800)}}}
-newGame();updateUI();
+
+/* ============================================================
+ * 记忆翻牌
+ * ------------------------------------------------------------
+ * 关键点：
+ *   1. 卡片数据用 {id, emoji, flipped, matched} 表示，
+ *      渲染时只改状态、再由 render() 统一刷 DOM —— 状态与视图分离。
+ *   2. 翻两张后需要「锁盘」(lock)，等 700ms 判定动画放完再继续，
+ *      否则连续快点会导致判定错乱。
+ *   3. 计时器用 setInterval 每秒累加，只在游戏进行中走。
+ * ========================================================== */
+
+const LEVELS = {
+  easy:   { label:'简单', cols:4, pairs:6  },
+  normal: { label:'普通', cols:4, pairs:8  },
+  hard:   { label:'困难', cols:5, pairs:10 }
+};
+
+const EMOJIS = ['🍎','🍇','🍋','🍉','🍓','🥝','🍑','🍒','🥥','🍍','🥑','🌽'];
+
+let level = 'normal';
+let cards = [];
+let first = null;        /* 第一张翻开的卡片索引 */
+let lock = false;        /* 判定动画期间锁盘 */
+let moves = 0, matchedPairs = 0, seconds = 0, timer = null, started = false;
+
+const boardEl = document.getElementById('board');
+
+/* ---------- 界面：难度切换 ---------- */
+function buildLevels(){
+  const box = document.getElementById('levels');
+  box.innerHTML = '';
+  Object.keys(LEVELS).forEach(function(k){
+    const b = document.createElement('button');
+    b.className = 'chip' + (k===level ? ' active' : '');
+    b.textContent = LEVELS[k].label;
+    b.onclick = function(){ level = k; newGame(); buildLevels(); };
+    box.appendChild(b);
+  });
+}
+
+/* ---------- 初始化 ---------- */
+function newGame(){
+  stopTimer();
+  const cfg = LEVELS[level];
+
+  // 取前 N 个图案，每个复制一份凑成对
+  const picked = EMOJIS.slice(0, cfg.pairs);
+  let deck = picked.concat(picked).map(function(emoji, i){
+    return { id:i, emoji:emoji, flipped:false, matched:false };
+  });
+
+  // Fisher–Yates 洗牌：从后往前，每个位置与前面随机位置交换
+  for (let i = deck.length-1; i > 0; i--){
+    const j = Math.floor(Math.random()*(i+1));
+    const t = deck[i]; deck[i] = deck[j]; deck[j] = t;
+  }
+
+  cards = deck;
+  first = null; lock = false;
+  moves = 0; matchedPairs = 0; seconds = 0; started = false;
+  refresh();
+  render();
+}
+
+/* ---------- 交互 ---------- */
+function onCard(i){
+  if (lock) return;
+  const c = cards[i];
+  if (c.flipped || c.matched) return;      /* 已翻开或已配对的不可再点 */
+
+  if (!started){ started = true; startTimer(); }
+
+  c.flipped = true;
+  render();
+
+  if (first === null){
+    first = i;                              /* 第一张，等第二张 */
+    return;
+  }
+
+  moves++;
+  const a = cards[first], b = c;
+
+  if (a.emoji === b.emoji){
+    a.matched = b.matched = true;           /* 配对成功，永久翻开 */
+    matchedPairs++;
+    first = null;
+    refresh();
+    render();
+    if (matchedPairs === LEVELS[level].pairs) setTimeout(win, 350);
+  } else {
+    lock = true;                            /* 配对失败，锁盘等动画 */
+    const f = first;
+    first = null;
+    refresh();
+    setTimeout(function(){
+      cards[f].flipped = false;
+      c.flipped = false;
+      lock = false;
+      render();
+    }, 700);
+  }
+}
+
+function win(){
+  stopTimer();
+  showHint('<b style="color:var(--accent)">' + I18N[lang].win + '</b><br>' +
+             I18N[lang].stat(moves, seconds));
+}
+
+/* ---------- 计时 ---------- */
+function startTimer(){ timer = setInterval(function(){ seconds++; refresh(); }, 1000); }
+function stopTimer(){ if (timer){ clearInterval(timer); timer = null; } }
+
+/* ---------- 渲染 ---------- */
+function render(){
+  const cfg = LEVELS[level];
+  boardEl.style.gridTemplateColumns = 'repeat(' + cfg.cols + ', 1fr)';
+  boardEl.innerHTML = '';
+  cards.forEach(function(c, i){
+    const el = document.createElement('div');
+    el.className = 'card' + (c.flipped||c.matched ? ' flipped' : '') + (c.matched ? ' matched' : '');
+    el.innerHTML =
+      '<div class="face back">?</div>' +
+      '<div class="face front">' + c.emoji + '</div>';
+    el.onclick = function(){ onCard(i); };
+    boardEl.appendChild(el);
+  });
+}
+
+function refresh(){
+  const L = I18N[lang];
+  document.getElementById('t_title').textContent = L.title;
+  document.getElementById('t_sub').textContent   = L.sub;
+  document.getElementById('t_hint').innerHTML    = L.hint;
+  document.getElementById('vMoves').textContent  = moves;
+  document.getElementById('vTime').textContent   = seconds + 's';
+  document.getElementById('vPairs').textContent  = matchedPairs + '/' + LEVELS[level].pairs;
+  document.getElementById('langBtn').textContent = (lang==='zh') ? 'EN' : '中';
+}
+
+const I18N = {
+  zh:{ title:'记忆翻牌', sub:'找出所有相同的图案', hint:'翻开两张卡片，相同则配对成功',
+       over:'游戏结束',
+       win:'全部配对完成！', stat:function(m,s){ return m+' 步 · '+s+' 秒'; } },
+  en:{ title:'Memory', sub:'Find all matching pairs', hint:'Flip two cards, match them to clear',
+       over:'Game over',
+       win:'All pairs found!', stat:function(m,s){ return m+' moves · '+s+'s'; } }
+};
+
+/** 修正提示区引用：hint 元素的 id 是 t_hint */
+function showHint(html){
+  const el = document.getElementById('t_hint');
+  if (el) el.innerHTML = html;
+}
+
+function toggleLang(){
+  lang = (lang==='zh') ? 'en' : 'zh';
+  refresh();
+}
+
+buildLevels();
+newGame();
+
+/* ---------- PWA 注册 ----------
+ * 注册 Service Worker 后本页被缓存，断网也能打开。
+ * 放在最后且 catch 掉异常：即使浏览器不支持也不影响正常功能。 */
+if ('serviceWorker' in navigator){
+  window.addEventListener('load', function(){
+    navigator.serviceWorker.register('./sw.js').catch(function(){});
+  });
+}
 </script>
 </body>
 </html>
