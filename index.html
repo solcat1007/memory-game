@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>记忆翻牌 | Memory Game</title>
+<style>
+:root{--c:#00BCD4;--cd:#0097A7;--w:#fff;--bg:#f0f8f9;--t:#333}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif;background:var(--bg);color:var(--t);display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;overflow:hidden;user-select:none}
+.lang-btn{position:fixed;top:20px;left:20px;z-index:100;padding:8px 16px;background:var(--c);color:var(--w);border:none;border-radius:20px;cursor:pointer;font-size:14px;font-weight:600;transition:.2s}
+.lang-btn:hover{background:var(--cd)}
+.fs-btn{position:fixed;top:20px;right:20px;z-index:100;padding:8px 16px;background:var(--c);color:var(--w);border:none;border-radius:20px;cursor:pointer;font-size:14px;font-weight:600;transition:.2s}
+.fs-btn:hover{background:var(--cd)}
+h2{color:var(--c);margin-bottom:10px;font-weight:600}
+.stats{font-size:16px;font-weight:600;color:var(--c);margin-bottom:15px;display:flex;gap:24px}
+.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;max-width:400px;width:90vw}
+.card{aspect-ratio:1;border-radius:10px;cursor:pointer;transition:transform .3s,background .2s;display:flex;align-items:center;justify-content:center;font-size:32px;background:var(--c);color:var(--w);box-shadow:0 4px 12px rgba(0,188,212,0.2)}
+.card.flipped{background:var(--w);color:var(--c);border:2px solid var(--c);transform:scale(1.05)}
+.card.matched{background:#e0f7fa;color:var(--cd);border:2px solid var(--cd);cursor:default;transform:scale(0.95)}
+.btn-new{padding:10px 24px;background:var(--c);color:var(--w);border:none;border-radius:20px;cursor:pointer;font-size:15px;font-weight:600;margin-top:15px;transition:.2s;font-family:inherit}
+.btn-new:hover{background:var(--cd)}
+.win-msg{color:var(--c);font-size:22px;font-weight:700;margin-top:10px}
+@media(max-width:450px){.grid{gap:6px;max-width:320px}.card{font-size:24px}}
+</style>
+</head>
+<body>
+<button class="lang-btn" onclick="toggleLang()">中/EN</button>
+<button class="fs-btn" onclick="toggleFS()">全屏</button>
+<h2 data-key="title">记忆翻牌</h2>
+<div class="stats">
+  <span id="moves" data-key="moves">步数: 0</span>
+  <span id="pairsFound" data-key="pairs">配对: 0/8</span>
+</div>
+<div class="grid" id="grid"></div>
+<div class="win-msg" id="winMsg"></div>
+<button class="btn-new" onclick="newGame()" data-key="new">新游戏</button>
+<script>
+/* ===== 记忆翻牌 / Memory Game ===== */
+var i18n={zh:{title:"记忆翻牌",moves:"步数: {n}",pairs:"配对: {n}/8",new:"新游戏",win:"恭喜！全部配对成功！"},en:{title:"Memory Game",moves:"Moves: {n}",pairs:"Pairs: {n}/8",new:"New Game",win:"Congratulations! All matched!"}};
+var lang="zh";
+function t(key,replace){var s=i18n[lang][key];if(replace)for(var k in replace)s=s.replace("{"+k+"}",replace[k]);return s}
+function updateUI(){document.querySelectorAll("[data-key]").forEach(function(el){var k=el.getAttribute("data-key");if(k==="moves")el.textContent=t(k,{n:moves});else if(k==="pairs")el.textContent=t(k,{n:matched});else el.textContent=t(k)})}
+function toggleLang(){lang=lang==="zh"?"en":"zh";updateUI()}
+function toggleFS(){document.fullscreenElement?document.exitFullscreen():document.documentElement.requestFullscreen()}
+var icons=["🐱","🐶","🐰","🐼","🦊","🐸","🐵","🐤"],cards=[],flipped=[],matched=0,moves=0,lock=false;
+function shuffle(a){for(var i=a.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=a[i];a[i]=a[j];a[j]=t}return a}
+function newGame(){cards=shuffle(icons.concat(icons));flipped=[];matched=0;moves=0;lock=false;document.getElementById("winMsg").textContent="";render();updateUI()}
+function render(){var g=document.getElementById("grid");g.innerHTML="";cards.forEach(function(icon,i){var d=document.createElement("div");d.className="card";d.setAttribute("data-idx",i);if(flipped.includes(i)){d.classList.add("flipped");d.textContent=icon}if(matchedCards.has(i)){d.classList.add("matched");d.textContent=icon}d.onclick=function(){flip(i)};g.appendChild(d)})}
+var matchedCards=new Set();
+function flip(i){if(lock||flipped.includes(i)||matchedCards.has(i))return;flipped.push(i);render();if(flipped.length===2){moves++;updateUI();if(cards[flipped[0]]===cards[flipped[1]]){matched++;matchedCards.add(flipped[0]);matchedCards.add(flipped[1]);flipped=[];render();updateUI();if(matched===8){document.getElementById("winMsg").textContent=t("win")}}else{lock=true;setTimeout(function(){flipped=[];render();lock=false},800)}}}
+newGame();updateUI();
+</script>
+</body>
+</html>
