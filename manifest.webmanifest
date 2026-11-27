@@ -1,7 +1,7 @@
 {
-  "name": "记忆翻牌 · 小工具",
+  "name": "记忆翻牌 · v2.0",
   "short_name": "记忆翻牌",
-  "description": "翻开配对图案，考验你的记忆力",
+  "description": "记忆翻牌 v2.0：四档难度、计时步数、连击奖励、最佳记录与 3D 翻转动画",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
@@ -15,5 +15,6 @@
       "type": "image/svg+xml",
       "purpose": "any maskable"
     }
-  ]
+  ],
+  "version": "2.0.0"
 }
