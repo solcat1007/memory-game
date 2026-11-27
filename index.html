@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>记忆翻牌 · 配对挑战</title>
-<meta name="description" content="翻开卡片找出相同图案，考验记忆力，支持多档难度">
+<title>记忆翻牌 · 配对挑战 v2.0</title>
+<meta name="description" content="记忆翻牌 v2.0：四档难度、计时步数、连击奖励、最佳记录与 3D 翻转动画">
 <link rel="manifest" href="./manifest.webmanifest">
 <link rel="icon" href="./icon.svg">
 <meta name="theme-color" content="#7e57c2">
@@ -13,16 +13,16 @@
 <style>
 
 :root{
-  --bg:#f4f5f7;           /* 页面底色：浅灰，避免纯白刺眼 */
-  --bg-glow:#ffffff;      /* 顶部径向光晕色，制造轻微的空间感 */
-  --surface:#ffffff;      /* 卡片底色 */
-  --surface-2:#fafbfc;    /* 卡片内的次级区块（输入框、结果区） */
-  --text:#16181d;         /* 主文字 */
-  --soft:#5d636e;         /* 次要文字 */
-  --mute:#8b929e;         /* 弱化文字（提示、单位、占位符） */
-  --line:#e6e8ec;         /* 分割线与边框 */
-  --accent:#26a69a;       /* 强调色（各玩具不同） */
-  --accent-soft:#e6f4f2;  /* 强调色的浅色版，用于底色块 */
+  --bg:#f4f5f7;
+  --bg-glow:#ffffff;
+  --surface:#ffffff;
+  --surface-2:#fafbfc;
+  --text:#16181d;
+  --soft:#5d636e;
+  --mute:#8b929e;
+  --line:#e6e8ec;
+  --accent:#26a69a;
+  --accent-soft:#e6f4f2;
   --r-lg:20px; --r-md:14px; --r-sm:10px;
   --ease:cubic-bezier(.4,0,.2,1);
   --shadow:0 1px 2px rgba(16,24,40,.04), 0 8px 24px rgba(16,24,40,.06);
@@ -32,7 +32,6 @@
 body{
   font-family:system-ui,-apple-system,'PingFang SC','Microsoft YaHei',sans-serif;
   background:var(--bg);
-  /* 顶部一层极淡光晕，比死板的纯色更有层次 */
   background-image:radial-gradient(120% 80% at 50% 0%, var(--bg-glow) 0%, rgba(255,255,255,0) 62%);
   background-attachment:fixed;
   color:var(--text);
@@ -41,7 +40,7 @@ body{
   padding:24px; -webkit-font-smoothing:antialiased;
 }
 
-.app{width:100%; max-width:480px; display:flex; flex-direction:column; align-items:center; gap:20px}
+.app{width:100%; max-width:480px; display:flex; flex-direction:column; align-items:center; gap:18px}
 
 .head{text-align:center}
 .head h1{font-size:22px; font-weight:600; letter-spacing:.5px}
@@ -49,56 +48,37 @@ body{
 
 .card{
   width:100%; background:var(--surface); border:1px solid var(--line);
-  border-radius:var(--r-lg); padding:22px; box-shadow:var(--shadow);
+  border-radius:var(--r-lg); padding:20px; box-shadow:var(--shadow);
 }
 
-.stage{
-  width:288px; height:288px; position:relative;
-  background:var(--surface); border:1px solid var(--line);
-  border-radius:50%; box-shadow:var(--shadow);
-  display:flex; align-items:center; justify-content:center;
-}
-.stage canvas{border-radius:50%}
-
-.phase{
-  font-size:29px; font-weight:300; letter-spacing:6px;
-  color:var(--accent); min-height:42px; text-align:center;
-  transition:color .4s var(--ease);
-}
-.cd{font-size:15px; color:var(--soft); font-variant-numeric:tabular-nums; min-height:22px}
-.meta{font-size:13px; color:var(--mute); min-height:20px; text-align:center}
-
-.row{display:flex; gap:10px; flex-wrap:wrap; justify-content:center}
-.stats{display:flex; gap:10px; width:100%}
+.row{display:flex; gap:8px; flex-wrap:wrap; justify-content:center}
+.stats{display:flex; gap:8px; width:100%}
 .stat{
   flex:1; background:var(--surface-2); border:1px solid var(--line);
-  border-radius:var(--r-md); padding:12px; text-align:center;
+  border-radius:var(--r-md); padding:11px 6px; text-align:center;
 }
 .stat .k{font-size:11px; color:var(--mute); letter-spacing:1px}
-.stat .v{font-size:21px; font-weight:600; margin-top:3px; font-variant-numeric:tabular-nums}
+.stat .v{font-size:19px; font-weight:600; margin-top:3px; font-variant-numeric:tabular-nums}
+.stat .v.hot{color:#ef6c00}
 
 .chip{
-  padding:9px 18px; font-size:13px; font-weight:500; font-family:inherit;
+  padding:7px 14px; font-size:12px; font-weight:500; font-family:inherit;
   background:var(--surface); color:var(--soft);
   border:1px solid var(--line); border-radius:999px; cursor:pointer;
   transition:all .2s var(--ease);
 }
 .chip:hover{border-color:var(--accent); color:var(--accent)}
-.chip.active{
-  background:var(--accent); border-color:var(--accent); color:#fff;
-  box-shadow:0 4px 14px rgba(0,0,0,.14);
-}
+.chip.active{background:var(--accent); border-color:var(--accent); color:#fff; box-shadow:0 4px 14px rgba(0,0,0,.14)}
 
 .btn{
-  padding:13px 42px; font-size:15px; font-weight:600; font-family:inherit;
-  letter-spacing:3px; background:var(--accent); color:#fff;
+  padding:12px 34px; font-size:14px; font-weight:600; font-family:inherit;
+  letter-spacing:2px; background:var(--accent); color:#fff;
   border:none; border-radius:var(--r-md); cursor:pointer;
   transition:transform .15s var(--ease), box-shadow .2s var(--ease);
   box-shadow:0 6px 20px rgba(0,0,0,.16);
 }
 .btn:hover{transform:translateY(-1px)}
 .btn:active{transform:translateY(0)}
-.btn.ghost{background:transparent; border:1px solid var(--line); color:var(--soft); box-shadow:none}
 
 .lang{
   position:fixed; top:16px; right:16px; z-index:20;
@@ -108,26 +88,34 @@ body{
   transition:all .2s var(--ease);
 }
 .lang:hover{border-color:var(--accent); color:var(--accent)}
-
 .hint{font-size:12px; color:var(--mute); text-align:center; line-height:1.7}
+.best{font-size:12px; color:var(--soft); text-align:center; min-height:18px; margin-top:10px}
+.best b{color:var(--accent); font-weight:600}
 
-@media (max-width:380px){
-  .stage{width:250px;height:250px}
-  .phase{font-size:25px; letter-spacing:4px}
+.board{width:100%; display:grid; gap:9px}
+.card-tile{
+  cursor:pointer; aspect-ratio:3/4; position:relative;
+  transform-style:preserve-3d; transition:transform .38s var(--ease);
 }
+.card-tile.flipped{transform:rotateY(180deg)}
+.face{
+  position:absolute; inset:0; backface-visibility:hidden; -webkit-backface-visibility:hidden;
+  border-radius:var(--r-md); display:flex; align-items:center; justify-content:center;
+  font-size:28px; border:1px solid var(--line); overflow:hidden;
+}
+.face.back{background:var(--accent); color:#fff; font-weight:600}
+.face.back:after{
+  content:''; position:absolute; inset:0;
+  background:linear-gradient(110deg,transparent 30%,rgba(255,255,255,.22) 50%,transparent 70%);
+  transform:translateX(-100%); animation:shine 3.4s ease-in-out infinite;
+}
+.face.front{background:var(--surface); transform:rotateY(180deg)}
+.card-tile.matched .face.front{background:var(--accent-soft); border-color:var(--accent); animation:matchPop .45s var(--ease)}
+.card-tile.wrong .face.front{background:#ffebee; border-color:#ef5350}
+@keyframes shine{0%,60%{transform:translateX(-100%)}80%,100%{transform:translateX(100%)}}
+@keyframes matchPop{0%{transform:rotateY(180deg) scale(1)}45%{transform:rotateY(180deg) scale(1.14)}100%{transform:rotateY(180deg) scale(1)}}
 
-:root{ --accent:#7e57c2; --accent-soft:#efe9f9; }
-
-.board{width:100%;display:grid;gap:10px}
-.card{cursor:pointer;aspect-ratio:3/4;position:relative;transform-style:preserve-3d;
-  transition:transform .38s var(--ease)}
-.card.flipped{transform:rotateY(180deg)}
-.face{position:absolute;inset:0;backface-visibility:hidden;border-radius:var(--r-md);
-  display:flex;align-items:center;justify-content:center;font-size:28px;
-  border:1px solid var(--line)}
-.face.back{background:var(--accent);color:#fff;font-weight:600}
-.face.front{background:var(--surface);transform:rotateY(180deg)}
-.card.matched .face.front{background:var(--accent-soft);border-color:var(--accent)}
+@media (max-width:380px){ .face{font-size:22px} }
 
 </style>
 </head>
@@ -144,8 +132,10 @@ body{
     <div class="stats">
       <div class="stat"><div class="k" id="t_moves">步数</div><div class="v" id="vMoves">0</div></div>
       <div class="stat"><div class="k" id="t_time">用时</div><div class="v" id="vTime">0s</div></div>
+      <div class="stat"><div class="k" id="t_combo">连击</div><div class="v" id="vCombo">0</div></div>
       <div class="stat"><div class="k" id="t_pairs">配对</div><div class="v" id="vPairs">0/8</div></div>
     </div>
+    <div class="best" id="bestLine"></div>
   </div>
 
   <div class="card">
@@ -157,37 +147,64 @@ body{
     <button class="btn" onclick="newGame()">重新开始</button>
   </div>
 
-  <div class="hint" id="t_hint">翻开两张卡片，相同则配对成功</div>
+  <div class="hint" id="t_hint">翻开两张卡片，相同则配对成功 · 连续配对得连击奖励</div>
 
 </div>
 <script>
 
 /* ============================================================
- * 记忆翻牌
+ * 记忆翻牌 v2.0
  * ------------------------------------------------------------
- * 关键点：
- *   1. 卡片数据用 {id, emoji, flipped, matched} 表示，
- *      渲染时只改状态、再由 render() 统一刷 DOM —— 状态与视图分离。
- *   2. 翻两张后需要「锁盘」(lock)，等 700ms 判定动画放完再继续，
- *      否则连续快点会导致判定错乱。
- *   3. 计时器用 setInterval 每秒累加，只在游戏进行中走。
+ * 在原版基础上新增：
+ *   1. 四档难度（6 / 8 / 10 / 12 对）
+ *   2. 连击奖励：连续配对成功，步数与连击分别统计
+ *   3. 最佳记录：按难度分别持久化最少步数 / 最快用时
+ *   4. 卡牌翻转优化：背面扫光、配对弹跳、失配红色提示
+ *   5. 完美通关（步数 = 对数）触发专属彩蛋
+ *
+ * 状态与视图分离：只改 cards 状态，再由 render() 统一刷 DOM。
+ * 翻两张后锁盘 700ms，等判定动画放完再继续。
  * ========================================================== */
 
 const LEVELS = {
-  easy:   { label:'简单', cols:4, pairs:6  },
+  easy:   { label:'入门', cols:4, pairs:6  },
   normal: { label:'普通', cols:4, pairs:8  },
-  hard:   { label:'困难', cols:5, pairs:10 }
+  hard:   { label:'困难', cols:5, pairs:10 },
+  master: { label:'大师', cols:6, pairs:12 }
 };
 
 const EMOJIS = ['🍎','🍇','🍋','🍉','🍓','🥝','🍑','🍒','🥥','🍍','🥑','🌽'];
+const BEST_KEY = 'memory_best_v2';
 
 let level = 'normal';
 let cards = [];
 let first = null;        /* 第一张翻开的卡片索引 */
 let lock = false;        /* 判定动画期间锁盘 */
-let moves = 0, matchedPairs = 0, seconds = 0, timer = null, started = false;
+let moves = 0, matchedPairs = 0, combo = 0, maxCombo = 0, seconds = 0;
+let timer = null, started = false, lang = 'zh';
+let bestRecords = {};
 
 const boardEl = document.getElementById('board');
+
+/* ---------- 最佳记录 ---------- */
+function loadBest(){
+  try { bestRecords = JSON.parse(localStorage.getItem(BEST_KEY) || '{}') || {}; }
+  catch(e){ bestRecords = {}; }
+}
+function saveBest(){
+  try { localStorage.setItem(BEST_KEY, JSON.stringify(bestRecords)); } catch(e){}
+}
+/** 返回是否刷新了记录 */
+function updateBest(){
+  const old = bestRecords[level];
+  if (!old || moves < old.moves || (moves === old.moves && seconds < old.seconds)){
+    bestRecords[level] = { moves:moves, seconds:seconds, maxCombo:maxCombo };
+    saveBest();
+    return true;
+  }
+  if (maxCombo > (old.maxCombo || 0)){ old.maxCombo = maxCombo; saveBest(); }
+  return false;
+}
 
 /* ---------- 界面：难度切换 ---------- */
 function buildLevels(){
@@ -195,7 +212,7 @@ function buildLevels(){
   box.innerHTML = '';
   Object.keys(LEVELS).forEach(function(k){
     const b = document.createElement('button');
-    b.className = 'chip' + (k===level ? ' active' : '');
+    b.className = 'chip' + (k === level ? ' active' : '');
     b.textContent = LEVELS[k].label;
     b.onclick = function(){ level = k; newGame(); buildLevels(); };
     box.appendChild(b);
@@ -210,10 +227,10 @@ function newGame(){
   // 取前 N 个图案，每个复制一份凑成对
   const picked = EMOJIS.slice(0, cfg.pairs);
   let deck = picked.concat(picked).map(function(emoji, i){
-    return { id:i, emoji:emoji, flipped:false, matched:false };
+    return { id:i, emoji:emoji, flipped:false, matched:false, wrong:false };
   });
 
-  // Fisher–Yates 洗牌：从后往前，每个位置与前面随机位置交换
+  // Fisher–Yates 洗牌
   for (let i = deck.length-1; i > 0; i--){
     const j = Math.floor(Math.random()*(i+1));
     const t = deck[i]; deck[i] = deck[j]; deck[j] = t;
@@ -221,7 +238,8 @@ function newGame(){
 
   cards = deck;
   first = null; lock = false;
-  moves = 0; matchedPairs = 0; seconds = 0; started = false;
+  moves = 0; matchedPairs = 0; combo = 0; maxCombo = 0; seconds = 0; started = false;
+  document.getElementById('t_hint').innerHTML = I18N[lang].hint;
   refresh();
   render();
 }
@@ -235,6 +253,7 @@ function onCard(i){
   if (!started){ started = true; startTimer(); }
 
   c.flipped = true;
+  c.wrong = false;
   render();
 
   if (first === null){
@@ -248,18 +267,23 @@ function onCard(i){
   if (a.emoji === b.emoji){
     a.matched = b.matched = true;           /* 配对成功，永久翻开 */
     matchedPairs++;
+    combo++;
+    if (combo > maxCombo) maxCombo = combo;
     first = null;
     refresh();
     render();
-    if (matchedPairs === LEVELS[level].pairs) setTimeout(win, 350);
+    if (matchedPairs === LEVELS[level].pairs) setTimeout(win, 420);
   } else {
-    lock = true;                            /* 配对失败，锁盘等动画 */
+    lock = true;                            /* 配对失败，连击清零 */
+    combo = 0;
     const f = first;
     first = null;
+    a.wrong = b.wrong = true;
     refresh();
+    render();
     setTimeout(function(){
-      cards[f].flipped = false;
-      c.flipped = false;
+      cards[f].flipped = false; cards[f].wrong = false;
+      c.flipped = false; c.wrong = false;
       lock = false;
       render();
     }, 700);
@@ -268,8 +292,13 @@ function onCard(i){
 
 function win(){
   stopTimer();
+  const isBest = updateBest();
+  const perfect = (moves === LEVELS[level].pairs);
+  if (perfect) eggUnlock('memory-perfect', '过目不忘！完美配对');
   showHint('<b style="color:var(--accent)">' + I18N[lang].win + '</b><br>' +
-             I18N[lang].stat(moves, seconds));
+           I18N[lang].stat(moves, seconds, maxCombo) +
+           (isBest ? '<br><b style="color:#ef6c00">' + I18N[lang].newBest + '</b>' : ''));
+  refresh();
 }
 
 /* ---------- 计时 ---------- */
@@ -283,7 +312,10 @@ function render(){
   boardEl.innerHTML = '';
   cards.forEach(function(c, i){
     const el = document.createElement('div');
-    el.className = 'card' + (c.flipped||c.matched ? ' flipped' : '') + (c.matched ? ' matched' : '');
+    el.className = 'card-tile' +
+      (c.flipped || c.matched ? ' flipped' : '') +
+      (c.matched ? ' matched' : '') +
+      (c.wrong ? ' wrong' : '');
     el.innerHTML =
       '<div class="face back">?</div>' +
       '<div class="face front">' + c.emoji + '</div>';
@@ -296,33 +328,83 @@ function refresh(){
   const L = I18N[lang];
   document.getElementById('t_title').textContent = L.title;
   document.getElementById('t_sub').textContent   = L.sub;
-  document.getElementById('t_hint').innerHTML    = L.hint;
+  document.getElementById('t_moves').textContent = L.moves;
+  document.getElementById('t_time').textContent  = L.time;
+  document.getElementById('t_combo').textContent = L.combo;
+  document.getElementById('t_pairs').textContent = L.pairs;
   document.getElementById('vMoves').textContent  = moves;
   document.getElementById('vTime').textContent   = seconds + 's';
+  document.getElementById('vCombo').textContent  = combo;
+  document.getElementById('vCombo').className    = 'v' + (combo >= 2 ? ' hot' : '');
   document.getElementById('vPairs').textContent  = matchedPairs + '/' + LEVELS[level].pairs;
-  document.getElementById('langBtn').textContent = (lang==='zh') ? 'EN' : '中';
+  document.getElementById('langBtn').textContent = (lang === 'zh') ? 'EN' : '中';
+
+  const b = bestRecords[level];
+  document.getElementById('bestLine').innerHTML = b
+    ? L.best + ' <b>' + b.moves + ' ' + L.stepUnit + ' · ' + b.seconds + 's</b>'
+    : L.noBest;
 }
 
 const I18N = {
-  zh:{ title:'记忆翻牌', sub:'找出所有相同的图案', hint:'翻开两张卡片，相同则配对成功',
-       over:'游戏结束',
-       win:'全部配对完成！', stat:function(m,s){ return m+' 步 · '+s+' 秒'; } },
-  en:{ title:'Memory', sub:'Find all matching pairs', hint:'Flip two cards, match them to clear',
-       over:'Game over',
-       win:'All pairs found!', stat:function(m,s){ return m+' moves · '+s+'s'; } }
+  zh:{ title:'记忆翻牌', sub:'找出所有相同的图案',
+       hint:'翻开两张卡片，相同则配对成功 · 连续配对得连击奖励',
+       moves:'步数', time:'用时', combo:'连击', pairs:'配对',
+       best:'最佳记录', noBest:'尚无记录，快来创造吧', stepUnit:'步',
+       win:'全部配对完成！', newBest:'★ 新纪录！',
+       stat:function(m,s,c){ return m + ' 步 · ' + s + ' 秒 · 最高连击 ' + c; } },
+  en:{ title:'Memory', sub:'Find all matching pairs',
+       hint:'Flip two cards to match · Chain matches for combo bonus',
+       moves:'Moves', time:'Time', combo:'Combo', pairs:'Pairs',
+       best:'Best', noBest:'No record yet — set one!', stepUnit:'moves',
+       win:'All pairs found!', newBest:'★ New record!',
+       stat:function(m,s,c){ return m + ' moves · ' + s + 's · max combo ' + c; } }
 };
 
-/** 修正提示区引用：hint 元素的 id 是 t_hint */
 function showHint(html){
   const el = document.getElementById('t_hint');
   if (el) el.innerHTML = html;
 }
 
 function toggleLang(){
-  lang = (lang==='zh') ? 'en' : 'zh';
+  lang = (lang === 'zh') ? 'en' : 'zh';
   refresh();
+  document.getElementById('t_hint').innerHTML = I18N[lang].hint;
 }
 
+/* ---------- 彩蛋接入 ---------- */
+function eggUnlock(id, msg){
+  const E = window.__SOLCAT_EGG__;
+  if (!E || E.unlocked.has(id)) return;
+  E.unlocked.add(id);
+  E.onUnlock.forEach(function(fn){ try{ fn(id); }catch(e){} });
+  const t = document.createElement('div');
+  t.style.cssText = 'position:fixed;top:18%;left:50%;transform:translateX(-50%);z-index:99996;'+
+    'background:rgba(18,20,26,.92);color:#ffca28;padding:12px 22px;border:1px solid #ffca28;'+
+    'border-radius:12px;font:14px ui-monospace,monospace;pointer-events:none;'+
+    'animation:eggIn .3s ease;box-shadow:0 8px 30px rgba(0,0,0,.4)';
+  t.textContent = '☠ ' + msg;
+  document.body.appendChild(t);
+  setTimeout(function(){ t.remove(); }, 2400);
+}
+
+function initEgg(){
+  const E = window.__SOLCAT_EGG__;
+  if (!E) return;
+  // 专属彩蛋：KONAMI 解锁后，所有卡片短暂翻开偷看 1.6 秒
+  E.onUnlock.push(function(id){
+    if (id !== 'konami' || !cards.length) return;
+    cards.forEach(function(c){ if (!c.matched) c.flipped = true; });
+    render();
+    setTimeout(function(){
+      cards.forEach(function(c){ if (!c.matched) c.flipped = false; });
+      render();
+    }, 1600);
+  });
+}
+document.addEventListener('DOMContentLoaded', initEgg);
+
+/* ---------- 启动 ---------- */
+loadBest();
 buildLevels();
 newGame();
 
@@ -334,6 +416,156 @@ if ('serviceWorker' in navigator){
     navigator.serviceWorker.register('./sw.js').catch(function(){});
   });
 }
+</script>
+<script>
+/* ============================================================
+ * SOLCAT EASTER EGG PROTOCOL v2.0 — 通用彩蛋引擎
+ * 零依赖 · 单文件 · 可注入任意 HTML 项目
+ * ============================================================ */
+(function(){
+  'use strict';
+  if (window.__SOLCAT_EGG__) return;
+  window.__SOLCAT_EGG__ = { version:'2.0', unlocked:new Set(), onUnlock:[] };
+
+  var E = window.__SOLCAT_EGG__;
+  var KONAMI = ['ArrowUp','ArrowUp','ArrowDown','ArrowDown','ArrowLeft','ArrowRight','ArrowLeft','ArrowRight','b','a'];
+  var seq = [], logoClicks = 0, logoTimer = null;
+
+  /* ---------- 1. 控制台署名（ASCII Art） ---------- */
+  function banner(){
+    var art = '%c\n  ____             _   _       _   _   \n' +
+      ' / ___|  ___  _ __| |_(_) __ _| |_| |__  \n' +
+      ' \\___ \\ / _ \\| \'__| __| |/ _` | __| \'_ \\ \n' +
+      '  ___) | (_) | |  | |_| | (_| | |_| | | |\n' +
+      ' |____/ \\___/|_|   \\__|_|\\__,_|\\__|_| |_|\n';
+    console.log(art, 'color:#26a69a;font-family:monospace;font-weight:bold');
+    console.log('%c☠ SOLCAT EASTER EGG PROTOCOL v2.0 — 你找到了隐藏入口',
+      'color:#666;font-size:11px;letter-spacing:1px');
+    console.log('%c提示：↑↑↓↓←→←→BA · 连点标题 5 次 · 输入 solcat · Ctrl+Shift+T',
+      'color:#999;font-size:10px');
+  }
+
+  /* ---------- 2. 烟花彩带粒子 ---------- */
+  function confetti(){
+    var colors = ['#26a69a','#42a5f5','#ef5350','#ffca28','#ab47bc','#66bb6a','#ff7043'];
+    var cvs = document.createElement('canvas');
+    cvs.style.cssText = 'position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:99999';
+    document.body.appendChild(cvs);
+    var ctx = cvs.getContext('2d'), W = cvs.width = innerWidth, H = cvs.height = innerHeight;
+    var P = [];
+    for (var i=0;i<180;i++) P.push({
+      x:W/2+(Math.random()-.5)*120, y:H*.4+(Math.random()-.5)*40,
+      vx:(Math.random()-.5)*18, vy:-Math.random()*16-4,
+      c:colors[i%colors.length], s:Math.random()*8+4, r:Math.random()*6,
+      life:1, spin:(Math.random()-.5)*.3
+    });
+    var f = 0;
+    (function draw(){
+      f++; ctx.clearRect(0,0,W,H);
+      P.forEach(function(p){
+        p.x+=p.vx; p.y+=p.vy; p.vy+=.35; p.vx*=.99; p.r+=p.spin; p.life-=.006;
+        if(p.life<=0) return;
+        ctx.save(); ctx.translate(p.x,p.y); ctx.rotate(p.r); ctx.globalAlpha=p.life;
+        ctx.fillStyle=p.c; ctx.fillRect(-p.s/2,-p.s/2,p.s,p.s*.6); ctx.restore();
+      });
+      if (f<180) requestAnimationFrame(draw); else cvs.remove();
+    })();
+  }
+
+  /* ---------- 3. 隐藏开发者面板 ---------- */
+  function devPanel(app){
+    var old = document.getElementById('__egg_panel');
+    if (old){ old.remove(); return; }
+    var d = document.createElement('div');
+    d.id='__egg_panel';
+    d.style.cssText='position:fixed;bottom:20px;right:20px;z-index:99998;width:280px;'+
+      'background:rgba(18,20,26,.94);color:#e0e0e0;border:1px solid #26a69a;border-radius:14px;'+
+      'padding:18px;font:12px/1.7 ui-monospace,monospace;backdrop-filter:blur(12px);'+
+      'box-shadow:0 12px 40px rgba(0,0,0,.4);animation:eggIn .3s ease';
+    d.innerHTML='<div style="color:#26a69a;font-weight:bold;font-size:13px;margin-bottom:10px">'+
+      '☠ SOLCAT 开发者模式</div>'+
+      '<div>应用　　: '+app+'</div>'+
+      '<div>协议　　: EGG PROTOCOL v'+E.version+'</div>'+
+      '<div>解锁数　: '+E.unlocked.size+'</div>'+
+      '<div>UA　　　: '+(navigator.userAgent.slice(0,38))+'…</div>'+
+      '<div>屏幕　　: '+innerWidth+'×'+innerHeight+'</div>'+
+      '<div>运行时间: '+Math.round(performance.now()/1000)+'s</div>'+
+      '<div style="color:#888;margin-top:10px;border-top:1px solid #333;padding-top:8px">'+
+      '已解锁: '+Array.from(E.unlocked).join(', ')+'</div>'+
+      '<button onclick="this.parentNode.remove()" style="margin-top:12px;width:100%;padding:6px;'+
+      'background:#26a69a;color:#fff;border:0;border-radius:6px;cursor:pointer">关闭</button>';
+    document.body.appendChild(d);
+  }
+
+  /* ---------- 4. 隐藏主题（赛博朋克） ---------- */
+  function cyberTheme(){
+    var s=document.getElementById('__egg_cyber');
+    if(s){ s.remove(); document.body.classList.remove('egg-cyber'); return; }
+    s=document.createElement('style'); s.id='__egg_cyber';
+    s.textContent='body.egg-cyber{filter:invert(1) hue-rotate(180deg)!important;}'+
+      'body.egg-cyber *{font-family:"Courier New",monospace!important;letter-spacing:1px}';
+    document.head.appendChild(s); document.body.classList.add('egg-cyber');
+    unlock('cyber','☠ 赛博模式已启用');
+  }
+
+  /* ---------- 5. 解锁分发 ---------- */
+  function unlock(id,msg){
+    if (E.unlocked.has(id)) return;
+    E.unlocked.add(id);
+    if (msg) console.log('%c[EGG] '+msg,'color:#ffca28;font-weight:bold');
+    E.onUnlock.forEach(function(fn){ try{fn(id);}catch(e){} });
+    var t=document.createElement('div');
+    t.style.cssText='position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);'+
+      'z-index:99997;background:rgba(18,20,26,.92);color:#ffca28;padding:18px 28px;'+ 
+      'border:1px solid #ffca28;border-radius:12px;font:14px ui-monospace,monospace;'+
+      'pointer-events:none;animation:eggIn .3s ease;box-shadow:0 8px 30px rgba(0,0,0,.4)';
+    t.textContent='☠ '+msg;
+    document.body.appendChild(t); setTimeout(function(){t.remove();},2200);
+  }
+
+  /* ---------- 6. 事件绑定 ---------- */
+  function init(){
+    var app = document.title || 'SOLCAT App';
+    banner();
+
+    // Konami 秘籍
+    addEventListener('keydown', function(e){
+      var k = e.key.length===1 ? e.key.toLowerCase() : e.key;
+      seq.push(k); if(seq.length>KONAMI.length) seq.shift();
+      if (seq.length===KONAMI.length && KONAMI.every(function(v,i){return seq[i]===v;})){
+        seq=[]; confetti(); unlock('konami','KONAMI CODE 已激活！');
+      }
+      // Ctrl+Shift+T → 赛博主题
+      if (e.ctrlKey && e.shiftKey && (e.key==='T'||e.key==='t')){
+        e.preventDefault(); cyberTheme();
+      }
+      // 输入 solcat
+      if (e.key==='Enter' && window.__eggBuf__ === 'solcat'){ cyberTheme(); window.__eggBuf__=''; }
+      if (k.length===1) window.__eggBuf__ = ((window.__eggBuf__||'')+k).slice(-10);
+    });
+
+    // 连点标题 5 次 → 开发者面板
+    addEventListener('DOMContentLoaded', function(){
+      var targets = document.querySelectorAll('h1,.head h1,.logo,header h1');
+      var t = targets[0];
+      if(t){ t.style.cursor='default'; t.addEventListener('click',function(){
+        logoClicks++;
+        clearTimeout(logoTimer);
+        logoTimer=setTimeout(function(){logoClicks=0;},900);
+        if(logoClicks>=5){ logoClicks=0; devPanel(app); unlock('dev','开发者模式已解锁'); }
+      });}
+      // 给 body 加动画 keyframe
+      var a=document.createElement('style');
+      a.textContent='@keyframes eggIn{from{opacity:0;transform:translateY(10px) scale(.96)}to{opacity:1;transform:none}}';
+      document.head.appendChild(a);
+    });
+
+    console.log('%c☠ 彩蛋引擎已加载 — 祝你玩得开心','color:#26a69a');
+  }
+
+  if (document.readyState==='loading') addEventListener('DOMContentLoaded',init);
+  else init();
+})();
 </script>
 </body>
 </html>
